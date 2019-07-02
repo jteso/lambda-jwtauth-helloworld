@@ -1,0 +1,39 @@
+service: auth-hello-world
+
+provider:
+  name: aws
+  runtime: go1.x
+  region: ap-southeast-2
+  memorySize: 128
+  stage: ${opt:stage, self:custom.defaultStage}
+  profile: ${self:custom.profiles.${self:provider.stage}}
+custom:
+  defaultStage: dev
+  profiles:
+    dev: personal-serverless
+    prod: flitch-nonprod
+
+package:
+  exclude:
+  - ./**
+  include:
+  - ./bin/**
+
+functions:
+  authorize:
+    handler: bin/sec-jwt-verifier
+    environment:
+      SIGNING_KEY: mysecret
+  hello-world:
+    handler: bin/hello-world
+    events:
+    - http:
+        path: /pub
+        method: get
+    - http:
+        path: /pvt
+        method: get
+        authorizer:
+          name: authorize
+          resultTtlInSeconds: 0
+
